@@ -55,6 +55,8 @@ const overlayStyle: CSSProperties = {
 }
 
 const tileActionsStyle: CSSProperties = {
+  position: 'relative',
+  zIndex: 1,
   display: 'flex',
   gap: 'var(--space-1)',
   padding: 'var(--space-2)',
