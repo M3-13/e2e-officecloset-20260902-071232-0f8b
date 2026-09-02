@@ -41,8 +41,8 @@ def list_items(
 
 @router.post("/items", response_model=ItemOut, status_code=201)
 async def create_item(
-    _: None = Depends(_check_upload_size),
     user_id: int = Depends(get_current_user),
+    _: None = Depends(_check_upload_size),
     name: str | None = Form(None),
     category: str | None = Form(None),
     image: UploadFile | None = File(None),

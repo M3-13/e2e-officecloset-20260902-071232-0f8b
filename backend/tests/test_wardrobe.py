@@ -182,3 +182,13 @@ def test_post_validation_errors(client):
 def test_unauthenticated_returns_401(client):
     assert client.get("/api/wardrobe/items").status_code == 401
     assert client.post("/api/wardrobe/items").status_code == 401
+
+
+def test_unauthenticated_oversized_upload_returns_401(client):
+    big = b"x" * (5 * 1024 * 1024 + 1024)
+    resp = client.post(
+        "/api/wardrobe/items",
+        data={"name": "Big", "category": "kleider"},
+        files={"image": ("big.jpg", big, "image/jpeg")},
+    )
+    assert resp.status_code == 401
