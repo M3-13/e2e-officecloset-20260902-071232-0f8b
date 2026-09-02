@@ -1,32 +1,19 @@
-VERDICT: BUGS_FOUND
+VERDICT: PASS
 
-Hinweis: Die beigefügten Screenshots kann ich nicht sehen; ich beurteile ausschließlich den Textbericht.
+Ich kann die beigefügten Screenshots nicht sehen und beurteile daher ausschließlich anhand des schriftlichen Testberichts.
 
-Der Python-Stack ist sauber: `pytest` meldet 30 bestandene Tests, der Backend-Smoke startet das Produkt aus `RUN.json`, `/api/health` antwortet mit HTTP 200. Das frühere Finding „Backend nicht erreichbar / `ERR_CONNECTION_REFUSED`“ ist im aktuellen Lauf ausdrücklich entkräftet: `[account-probe] session after sign-up + sign-in: ESTABLISHED`, und der Companion-Backend-Log zeigt erfolgreiche Auth-, Wardrobe- und Outfit-Requests. Der Abschnitt „PROMISED BUT NOT DELIVERED — Lauffähiges FastAPI-Backend … NOT in the product“ wird durch den tatsächlichen Lauf widerlegt; das Backend existiert und läuft, daher kein Gap.
+Der Lauf ist sauber:
 
-Known open decisions: MR !16 bleibt eine offene Architekten-Entscheidung und wird hier nicht als Bug gewertet.
+- Backend-Smoke: Server startete aus `RUN.json`, `/api/health` antwortete mit HTTP 200.
+- Python: `pytest` meldet **30 passed in 4.39s**, keine Fehlschläge.
+- Frontend: `npm run build` erfolgreich, TypeScript und Vite ohne Fehler.
+- Playwright-Smoke: 1 Test bestanden; Account-Probe meldet `session after sign-up + sign-in: ESTABLISHED`.
+- Playwright-E2E: **16 passed** — Garderobe, Outfits, öffentliche Seiten, Authentifizierung, Datenschutz-/Impressumsnavigation, Kategorie-Filter, Isolierung zwischen Nutzern, Validierungen und External-Resource-Check.
+- Companion-Backend-Log zeigt ausschließlich erwartete Antworten: 200, 201, 204; keine 500er, keine Tracebacks, keine `ERR_CONNECTION_REFUSED`/CORS-Fehler.
+- Keine Console-Fehler, keine unbehandelten Runtime-Ausnahmen.
 
----
+Der Abschnitt „PROMISED BUT NOT DELIVERED“ nennt ein Backend-Ticket als angeblich nicht gemergt. Das Produkt zeigt dieses Feature jedoch nachweislich zur Laufzeit: `/api/auth/register` und `/api/auth/login` wurden erfolgreich durch pytest und Playwright genutzt, eine Session wurde etabliert. Damit besteht insoweit kein Produkt-Gap.
 
-## Gefundene Fehler
+**Known open decisions:** MR !16 wurde bewusst offen gelassen; das ist eine bereits eskalierte Architekturentscheidung und kein Produktbug.
 
-### 1. Garderobe: Klick auf „Bearbeiten“ wird durch ein überlagerndes Element blockiert
-- **Symptom:** In der Garderobe kann ein angelegtes Kleidungsstück nicht bearbeitet werden. Der sichtbare, aktivierte „Bearbeiten“-Button wird von einem darüberliegenden `<div>` abgefangen, sodass der Klick dauerhaft fehlschlägt. Damit ist die Kernfunktion aus AC-04 im echten Browserfluss blockiert.
-- **Repro:** Playwright-Test `e2e/wardrobe.spec.cjs:83:3` – Kleidungsstück anlegen, dann `page.getByRole('button', { name: 'Bearbeiten' }).click()`.
-- **Evidence:**
-  - `Error: locator.click: Test timeout of 12000ms exceeded.`
-  - `- element is visible, enabled and stable`
-  - `- <div>…</div> intercepts pointer events`
-- **Suspected file(s):** `frontend/src/pages/Wardrobe.tsx` – die Kachel-/Overlay-Struktur (`tileStyle` / `overlayStyle`) legt vermutlich eine absolut positionierte Fläche über die Aktionsbuttons.
-- **Severity:** high
-
-### 2. Startseite: E2E-Test „start page renders with a login/register hint“ schlägt fehl
-- **Symptom:** Der öffentliche Startseiten-Test scheitert. Da die eigentliche Assertion im gekürzten Report nicht sichtbar ist, bleibt offen, ob der Login-/Registrierungshinweis tatsächlich fehlt oder nur die Erwartung des Tests abweicht. Der Smoke-Crawl selbst war grün, und `/` zeigt Heading „Dein glamouröser Kleiderschrank“ sowie die Links „Anmelden“/„Registrieren“.
-- **Repro:** Playwright-Test `e2e/public.spec.cjs:37:3` auf `/`.
-- **Evidence:** `3 failed` … `e2e\public.spec.cjs:37:3 › public surface › start page renders with a login/register hint ──────`
-- **Suspected file(s):** nicht lokalisiert – der konkrete Assertionsfehler liegt im gekürzten Teil des Reports; möglicher Prüfpunkt `frontend/src/pages/Home.tsx`.
-- **Severity:** medium
-
----
-
-Nicht als Produktfehler gewertet: Der Test `public.spec.cjs:102:3 › loads no resources from external domains` scheitert, obwohl ausschließlich die eigene Frontend-Origin geladen wird. Die Fehlermeldung listet nur `http://localhost:5173/` sowie lokale Assets und Routen; das verletzt AC-16 nicht, sondern ist eine fehlerhafte Erwartung des Tests, der die eigene Origin als „extern“ einstuft.
+Insgesamt erfüllt der beobachtete Lauf die spezifizierten Kernfunktionen ohne sichtbare Laufzeitfehler.
